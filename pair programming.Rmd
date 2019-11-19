@@ -1,0 +1,50 @@
+---
+title: "Class 11/19/19"
+author: "Diego Flores"
+date: "11/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidymodels)
+library(skimr)
+library(tidyverse)
+```
+
+```{r}
+download.file("https://github.com/TheUpshot/2018-live-poll-results/archive/master.zip", destfile = "master.zip")
+
+unzip("master.zip")
+arizona_data <- read_csv("2018-live-poll-results-master/data/elections-poll-az02-1.csv", 
+                                 col_types = cols(
+          .default = col_character(),
+          turnout_scale = col_double(),
+          turnout_score = col_double(),
+          w_LV = col_double(),
+          w_RV = col_double(),
+          final_weight = col_double(),
+          timestamp = col_datetime(format = "")
+        ))
+
+my_list <- fs::dir_ls("2018-live-poll-results-master/data/")
+
+raw <- map_dfr(my_list, .id = "source", read_csv,  col_types = cols(
+  .default = col_character(),
+  turnout_scale = col_double(),
+  turnout_score = col_double(),
+  w_LV = col_double(),
+  w_RV = col_double(),
+  final_weight = col_double(),
+  timestamp = col_datetime(format = "")
+))
+
+x <- raw %>% 
+  mutate(dvote = ifelse(response == "Dem", 1, 0)) %>% 
+  mutate(female = ifelse(gender == "Female", 1, 0)) %>% 
+  select(dvote, female, response, gender)
+
+lm_female <- lm(data = x, dvote ~ female) 
+  
+x %>% ggplot(aes(x = female, y = dvote)) + geom_jitter(method = "lm")
+```
